@@ -222,6 +222,7 @@ class WarehouseRobotApp {
             'nearest_neighbor': 'Nearest Neighbor',
             'greedy': 'Greedy Algorithm',
             'genetic': 'Genetic Algorithm',
+            'dynamic': 'Dynamic Programming (Optimal)',
             'aco': 'Ant Colony Optimization',
         };
         return names[algorithm] || algorithm;

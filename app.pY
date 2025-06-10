@@ -51,6 +51,8 @@ def solve_tsp():
             path, total_distance = solver.greedy_algorithm()
         elif algorithm == 'genetic':
             path, total_distance = solver.genetic_algorithm()
+        elif algorithm == 'dynamic':
+            path, total_distance = solver.dynamic_programming()
         elif algorithm == 'aco':
             path, total_distance = solver.ant_colony_optimization()
         else:
