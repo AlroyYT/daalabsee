@@ -1,0 +1,253 @@
+import numpy as np
+import random
+import math
+from typing import List, Tuple
+
+class TSPSolver:
+    """
+    Travelling Salesman Problem solver for warehouse robot path optimization.
+    Implements multiple heuristic algorithms to find optimal or near-optimal paths.
+    """
+    
+    def __init__(self, points: List[List[float]]):
+        """
+        Initialize TSP solver with list of points.
+        
+        Args:
+            points: List of [x, y] coordinates representing item locations
+        """
+        self.points = np.array(points)
+        self.n = len(points)
+        self.distance_matrix = self._calculate_distance_matrix()
+    
+    def _calculate_distance_matrix(self) -> np.ndarray:
+        """
+        Calculate distance matrix between all pairs of points using Euclidean distance.
+        
+        Returns:
+            2D numpy array where matrix[i][j] = distance between point i and point j
+        """
+        matrix = np.zeros((self.n, self.n))
+        
+        for i in range(self.n):
+            for j in range(self.n):
+                if i != j:
+                    # Euclidean distance formula: sqrt((x2-x1)^2 + (y2-y1)^2)
+                    dx = self.points[i][0] - self.points[j][0]
+                    dy = self.points[i][1] - self.points[j][1]
+                    matrix[i][j] = math.sqrt(dx*dx + dy*dy)
+        
+        return matrix
+    
+    def nearest_neighbor(self, start_index: int = 0) -> Tuple[List[List[float]], float]:
+        """
+        Nearest Neighbor heuristic: Always visit the closest unvisited point.
+        
+        Args:
+            start_index: Starting point index (default: 0)
+            
+        Returns:
+            Tuple of (path as list of coordinates, total distance)
+        """
+        visited = [False] * self.n
+        path_indices = [start_index]
+        visited[start_index] = True
+        current = start_index
+        total_distance = 0.0
+        
+        # Visit all remaining points
+        for _ in range(self.n - 1):
+            nearest_distance = float('inf')
+            nearest_index = -1
+            
+            # Find nearest unvisited point
+            for i in range(self.n):
+                if not visited[i] and self.distance_matrix[current][i] < nearest_distance:
+                    nearest_distance = self.distance_matrix[current][i]
+                    nearest_index = i
+            
+            # Move to nearest point
+            path_indices.append(nearest_index)
+            visited[nearest_index] = True
+            total_distance += nearest_distance
+            current = nearest_index
+        
+        # Return to start
+        path_indices.append(start_index)
+        total_distance += self.distance_matrix[current][start_index]
+        
+        # Convert indices to coordinates
+        path = [self.points[i].tolist() for i in path_indices]
+        
+        return path, total_distance
+    
+    def greedy_algorithm(self) -> Tuple[List[List[float]], float]:
+        """
+        Greedy algorithm: Build path by always choosing the shortest available edge.
+        
+        Returns:
+            Tuple of (path as list of coordinates, total distance)
+        """
+        # Create list of all edges with their distances
+        edges = []
+        for i in range(self.n):
+            for j in range(i + 1, self.n):
+                edges.append((self.distance_matrix[i][j], i, j))
+        
+        # Sort edges by distance
+        edges.sort()
+        
+        # Build path using greedy approach
+        used_edges = []
+        degree = [0] * self.n
+        
+        for distance, i, j in edges:
+            # Check if adding this edge would create a cycle (except for the last edge)
+            if degree[i] < 2 and degree[j] < 2:
+                if len(used_edges) < self.n - 1 or (degree[i] == 1 and degree[j] == 1):
+                    used_edges.append((i, j))
+                    degree[i] += 1
+                    degree[j] += 1
+                    
+                    if len(used_edges) == self.n:
+                        break
+        
+        # Build path from edges
+        path_indices = self._build_path_from_edges(used_edges)
+        
+        # Calculate total distance
+        total_distance = 0.0
+        for i in range(len(path_indices) - 1):
+            total_distance += self.distance_matrix[path_indices[i]][path_indices[i + 1]]
+        
+        # Convert indices to coordinates
+        path = [self.points[i].tolist() for i in path_indices]
+        
+        return path, total_distance
+    
+    def genetic_algorithm(self, population_size: int = 100, generations: int = 500) -> Tuple[List[List[float]], float]:
+        """
+        Genetic Algorithm for TSP optimization.
+        
+        Args:
+            population_size: Number of individuals in each generation
+            generations: Number of generations to evolve
+            
+        Returns:
+            Tuple of (path as list of coordinates, total distance)
+        """
+        # Initialize population with random tours
+        population = []
+        for _ in range(population_size):
+            tour = list(range(self.n))
+            random.shuffle(tour)
+            population.append(tour)
+        
+        for generation in range(generations):
+            # Evaluate fitness (inverse of distance)
+            fitness_scores = []
+            for tour in population:
+                distance = self._calculate_tour_distance(tour)
+                fitness_scores.append(1.0 / (1.0 + distance))
+            
+            # Selection: Choose parents based on fitness
+            new_population = []
+            for _ in range(population_size):
+                parent1 = self._tournament_selection(population, fitness_scores)
+                parent2 = self._tournament_selection(population, fitness_scores)
+                
+                # Crossover
+                child = self._order_crossover(parent1, parent2)
+                
+                # Mutation
+                if random.random() < 0.02:  # 2% mutation rate
+                    child = self._swap_mutation(child)
+                
+                new_population.append(child)
+            
+            population = new_population
+        
+        # Find best tour in final population
+        best_tour = min(population, key=lambda tour: self._calculate_tour_distance(tour))
+        best_distance = self._calculate_tour_distance(best_tour)
+        
+        # Ensure tour starts and ends at same point
+        best_tour.append(best_tour[0])
+        
+        # Convert indices to coordinates
+        path = [self.points[i].tolist() for i in best_tour]
+        
+        return path, best_distance
+    
+    def _build_path_from_edges(self, edges: List[Tuple[int, int]]) -> List[int]:
+        """Build a path from list of edges."""
+        if not edges:
+            return [0, 0]
+        
+        # Create adjacency list
+        adj = {i: [] for i in range(self.n)}
+        for i, j in edges:
+            adj[i].append(j)
+            adj[j].append(i)
+        
+        # Find a starting point (any point with degree 1, or point 0)
+        start = 0
+        for i in range(self.n):
+            if len(adj[i]) == 1:
+                start = i
+                break
+        
+        # Build path
+        path = [start]
+        current = start
+        prev = -1
+        
+        while len(path) <= self.n:
+            next_nodes = [node for node in adj[current] if node != prev]
+            if not next_nodes:
+                break
+            
+            next_node = next_nodes[0]
+            path.append(next_node)
+            prev = current
+            current = next_node
+        
+        return path
+    
+    def _calculate_tour_distance(self, tour: List[int]) -> float:
+        """Calculate total distance for a given tour."""
+        distance = 0.0
+        for i in range(len(tour)):
+            j = (i + 1) % len(tour)
+            distance += self.distance_matrix[tour[i]][tour[j]]
+        return distance
+    
+    def _tournament_selection(self, population: List[List[int]], fitness_scores: List[float]) -> List[int]:
+        """Tournament selection for genetic algorithm."""
+        tournament_size = 5
+        tournament_indices = random.sample(range(len(population)), min(tournament_size, len(population)))
+        best_index = max(tournament_indices, key=lambda i: fitness_scores[i])
+        return population[best_index][:]
+    
+    def _order_crossover(self, parent1: List[int], parent2: List[int]) -> List[int]:
+        """Order crossover (OX) for genetic algorithm."""
+        size = len(parent1)
+        start, end = sorted(random.sample(range(size), 2))
+        
+        child = [-1] * size
+        child[start:end] = parent1[start:end]
+        
+        pointer = end
+        for city in parent2[end:] + parent2[:end]:
+            if city not in child:
+                child[pointer % size] = city
+                pointer += 1
+        
+        return child
+    
+    def _swap_mutation(self, tour: List[int]) -> List[int]:
+        """Swap mutation for genetic algorithm."""
+        mutated = tour[:]
+        i, j = random.sample(range(len(tour)), 2)
+        mutated[i], mutated[j] = mutated[j], mutated[i]
+        return mutated

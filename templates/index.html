@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Optimal Path for Warehouse Robots</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-title">WarehouseBot</span>
+            </div>
+            <div class="nav-links">
+                <span class="nav-status">Path Optimization System</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🤖 Optimal Path for Warehouse Robots</h1>
+            <p>Advanced AI-powered path optimization system for autonomous warehouse robotics</p>
+            <p>Simulate intelligent routing algorithms to maximize efficiency and minimize travel distance</p>
+        </header>
+
+        <!-- Control Panel -->
+        <div class="control-panel glass-card">
+            <div class="controls-row">
+                <div class="control-group">
+                    <label for="algorithm-select">Algorithm:</label>
+                    <select id="algorithm-select" class="glass-input">
+                        <option value="nearest_neighbor">Nearest Neighbor</option>
+                        <option value="greedy">Greedy Algorithm</option>
+                        <option value="genetic">Genetic Algorithm</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <button id="compute-btn" class="btn btn-primary glow-btn">
+                        <span class="btn-icon">🚀</span>
+                        Compute Optimal Path
+                    </button>
+                    <button id="clear-btn" class="btn btn-secondary">
+                        <span class="btn-icon">🗑️</span>
+                        Clear All
+                    </button>
+                    <button id="sample-btn" class="btn btn-info">
+                        <span class="btn-icon">📍</span>
+                        Load Sample Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="controls-row">
+                <div class="control-group">
+                    <label>Manual Input (x, y):</label>
+                    <input type="number" id="x-coord" class="glass-input" placeholder="X coordinate" step="0.1">
+                    <input type="number" id="y-coord" class="glass-input" placeholder="Y coordinate" step="0.1">
+                    <button id="add-point-btn" class="btn btn-small">
+                        <span class="btn-icon">➕</span>
+                        Add Point
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="animate-checkbox" class="glass-checkbox" checked>
+                        <span class="checkbox-custom"></span>
+                        Animate Robot Movement
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warehouse Map -->
+        <div class="map-container glass-card">
+            <div class="map-header">
+                <h3>🏭 Warehouse Layout</h3>
+                <p class="instruction">Click on the map to add item locations for the robot to visit</p>
+            </div>
+            <div class="map-wrapper">
+                <svg id="warehouse-map" width="800" height="500" viewBox="0 0 800 500">
+                    <!-- Grid Background -->
+                    <defs>
+                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(139, 148, 158, 0.2)" stroke-width="1"/>
+                        </pattern>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge> 
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <rect width="100%" height="100%" fill="var(--bg-secondary)" />
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                    
+                    <!-- Base Station (Robot Start/End Point) -->
+                    <g id="base-station">
+                        <circle cx="50" cy="50" r="20" fill="var(--neon-primary)" stroke="var(--neon-primary)" stroke-width="3" filter="url(#glow)"/>
+                        <text x="50" y="58" text-anchor="middle" fill="var(--bg-primary)" font-weight="bold" font-size="14">🏠</text>
+                        <text x="50" y="35" text-anchor="middle" fill="var(--neon-primary)" font-size="12" font-weight="bold">BASE</text>
+                    </g>
+                    
+                    <!-- Item Locations (will be added dynamically) -->
+                    <g id="item-locations"></g>
+                    
+                    <!-- Robot Path (will be drawn dynamically) -->
+                    <g id="robot-path"></g>
+                    
+                    <!-- Robot (will be animated along path) -->
+                    <g id="robot" style="display: none;">
+                        <circle cx="0" cy="0" r="15" fill="var(--neon-secondary)" stroke="var(--neon-tertiary)" stroke-width="2" filter="url(#glow)"/>
+                        <text x="0" y="5" text-anchor="middle" fill="var(--bg-primary)" font-size="16">🤖</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel glass-card">
+            <h3>📊 Results</h3>
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-icon">📏</div>
+                    <div class="result-label">Total Distance:</div>
+                    <div id="total-distance" class="result-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-icon">⚡</div>
+                    <div class="result-label">Execution Time:</div>
+                    <div id="execution-time" class="result-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-icon">🧠</div>
+                    <div class="result-label">Algorithm Used:</div>
+                    <div id="algorithm-used" class="result-value">--</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-icon">📍</div>
+                    <div class="result-label">Points Visited:</div>
+                    <div id="points-count" class="result-value">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Point List -->
+        <div class="point-list glass-card">
+            <h3>📋 Item Locations</h3>
+            <div id="points-display" class="points-container">
+                <p class="no-points">No item locations added yet. Click on the map or use manual input.</p>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Computing optimal path...</p>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <p>💡 Advanced Travelling Salesman Problem (TSP) solver using heuristic algorithms</p>
+            </div>
+            <div class="footer-links">
+                <span class="footer-brand">Built by Meta/Google Engineers</span>
+                <div class="social-links">
+                    <span class="social-link">GitHub</span>
+                    <span class="social-link">LinkedIn</span>
+                    <span class="social-link">Twitter</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
