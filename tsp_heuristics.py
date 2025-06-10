@@ -251,3 +251,119 @@ class TSPSolver:
         i, j = random.sample(range(len(tour)), 2)
         mutated[i], mutated[j] = mutated[j], mutated[i]
         return mutated
+
+    def ant_colony_optimization(self, num_ants: int = 10, num_iterations: int = 100, 
+                           alpha: float = 1.0, beta: float = 2.0, 
+                           evaporation_rate: float = 0.5, q: float = 100.0) -> Tuple[List[List[float]], float]:
+        """
+        Ant Colony Optimization algorithm for TSP.
+        
+        Args:
+            num_ants: Number of ants in the colony
+            num_iterations: Number of iterations to run
+            alpha: Pheromone importance factor
+            beta: Heuristic importance factor (1/distance)
+            evaporation_rate: Pheromone evaporation rate (0-1)
+            q: Pheromone deposit factor
+            
+        Returns:
+            Tuple of (path as list of coordinates, total distance)
+        """
+        # Initialize pheromone matrix
+        pheromone = np.ones((self.n, self.n)) * 0.1
+        
+        # Heuristic information (1/distance)
+        heuristic = np.zeros((self.n, self.n))
+        for i in range(self.n):
+            for j in range(self.n):
+                if i != j:
+                    heuristic[i][j] = 1.0 / self.distance_matrix[i][j]
+        
+        best_path = None
+        best_distance = float('inf')
+        
+        for iteration in range(num_iterations):
+            # Store paths and distances for all ants
+            ant_paths = []
+            ant_distances = []
+            
+            # Each ant constructs a solution
+            for ant in range(num_ants):
+                # Start from random city
+                current_city = random.randint(0, self.n - 1)
+                visited = [False] * self.n
+                path = [current_city]
+                visited[current_city] = True
+                total_distance = 0.0
+                
+                # Construct path
+                for _ in range(self.n - 1):
+                    # Calculate probabilities for unvisited cities
+                    probabilities = []
+                    unvisited_cities = []
+                    
+                    for next_city in range(self.n):
+                        if not visited[next_city]:
+                            # Probability = (pheromone^alpha) * (heuristic^beta)
+                            prob = (pheromone[current_city][next_city] ** alpha) * \
+                                (heuristic[current_city][next_city] ** beta)
+                            probabilities.append(prob)
+                            unvisited_cities.append(next_city)
+                    
+                    # Select next city based on probabilities
+                    if probabilities:
+                        # Normalize probabilities
+                        total_prob = sum(probabilities)
+                        if total_prob > 0:
+                            probabilities = [p / total_prob for p in probabilities]
+                            
+                            # Roulette wheel selection
+                            rand = random.random()
+                            cumulative_prob = 0.0
+                            selected_city = unvisited_cities[0]  # fallback
+                            
+                            for i, prob in enumerate(probabilities):
+                                cumulative_prob += prob
+                                if rand <= cumulative_prob:
+                                    selected_city = unvisited_cities[i]
+                                    break
+                        else:
+                            selected_city = unvisited_cities[0]
+                        
+                        # Move to selected city
+                        path.append(selected_city)
+                        visited[selected_city] = True
+                        total_distance += self.distance_matrix[current_city][selected_city]
+                        current_city = selected_city
+                
+                # Return to start
+                path.append(path[0])
+                total_distance += self.distance_matrix[current_city][path[0]]
+                
+                ant_paths.append(path)
+                ant_distances.append(total_distance)
+                
+                # Update best solution
+                if total_distance < best_distance:
+                    best_distance = total_distance
+                    best_path = path[:]
+            
+            # Evaporate pheromones
+            pheromone *= (1.0 - evaporation_rate)
+            
+            # Deposit pheromones
+            for ant_idx in range(num_ants):
+                path = ant_paths[ant_idx]
+                distance = ant_distances[ant_idx]
+                pheromone_deposit = q / distance
+                
+                # Deposit pheromone on edges used by this ant
+                for i in range(len(path) - 1):
+                    city1, city2 = path[i], path[i + 1]
+                    pheromone[city1][city2] += pheromone_deposit
+                    pheromone[city2][city1] += pheromone_deposit
+        
+        # Convert indices to coordinates
+        path_coords = [self.points[i].tolist() for i in best_path]
+        
+        return path_coords, best_distance

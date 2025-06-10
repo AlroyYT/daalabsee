@@ -221,7 +221,8 @@ class WarehouseRobotApp {
         const names = {
             'nearest_neighbor': 'Nearest Neighbor',
             'greedy': 'Greedy Algorithm',
-            'genetic': 'Genetic Algorithm'
+            'genetic': 'Genetic Algorithm',
+            'aco': 'Ant Colony Optimization',
         };
         return names[algorithm] || algorithm;
     }
