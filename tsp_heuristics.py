@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import math
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 class TSPSolver:
     """
@@ -251,3 +251,97 @@ class TSPSolver:
         i, j = random.sample(range(len(tour)), 2)
         mutated[i], mutated[j] = mutated[j], mutated[i]
         return mutated
+    
+    def dynamic_programming(self, start_index: int = 0) -> Tuple[List[List[float]], float]:
+        """
+        Dynamic Programming solution using Held-Karp algorithm.
+        Provides optimal solution but with exponential time complexity O(n²2^n).
+        Recommended for problems with <= 15 points.
+        
+        Args:
+            start_index: Starting point index (default: 0)
+            
+        Returns:
+            Tuple of (path as list of coordinates, total distance)
+        """
+        if self.n > 20:
+            raise ValueError("Dynamic programming is not recommended for more than 20 points due to exponential complexity")
+        
+        if self.n <= 1:
+            path = [self.points[0].tolist(), self.points[0].tolist()]
+            return path, 0.0
+        
+        # DP table: dp[mask][i] = minimum cost to visit all cities in mask ending at city i
+        # mask is a bitmask representing which cities have been visited
+        dp = {}
+        parent = {}  # To reconstruct the path
+        
+        # Initialize: starting from start_index, visit only start_index
+        start_mask = 1 << start_index
+        dp[(start_mask, start_index)] = 0.0
+        
+        # Fill DP table for all possible subsets
+        for mask in range(1, 1 << self.n):
+            for u in range(self.n):
+                if not (mask & (1 << u)):  # u is not in the current subset
+                    continue
+                
+                if mask == (1 << u):  # Only u is in the subset
+                    if u == start_index:
+                        dp[(mask, u)] = 0.0
+                    else:
+                        dp[(mask, u)] = float('inf')
+                    continue
+                
+                # Try all possible previous cities
+                dp[(mask, u)] = float('inf')
+                prev_mask = mask ^ (1 << u)  # Remove u from mask
+                
+                for v in range(self.n):
+                    if not (prev_mask & (1 << v)):  # v is not in previous subset
+                        continue
+                    
+                    if (prev_mask, v) in dp:
+                        cost = dp[(prev_mask, v)] + self.distance_matrix[v][u]
+                        if cost < dp[(mask, u)]:
+                            dp[(mask, u)] = cost
+                            parent[(mask, u)] = v
+        
+        # Find the minimum cost to visit all cities and return to start
+        final_mask = (1 << self.n) - 1  # All cities visited
+        min_cost = float('inf')
+        last_city = -1
+        
+        for i in range(self.n):
+            if i != start_index and (final_mask, i) in dp:
+                cost = dp[(final_mask, i)] + self.distance_matrix[i][start_index]
+                if cost < min_cost:
+                    min_cost = cost
+                    last_city = i
+        
+        # Reconstruct path
+        path_indices = self._reconstruct_dp_path(parent, final_mask, last_city, start_index)
+        path_indices.append(start_index)  # Return to start
+        
+        # Convert indices to coordinates
+        path = [self.points[i].tolist() for i in path_indices]
+        
+        return path, min_cost
+
+    def _reconstruct_dp_path(self, parent: Dict, mask: int, last_city: int, start_index: int) -> List[int]:
+        """Reconstruct the optimal path from DP parent table."""
+        path = []
+        current_city = last_city
+        current_mask = mask
+        
+        while current_city != start_index:
+            path.append(current_city)
+            next_city = parent.get((current_mask, current_city), -1)
+            if next_city == -1:
+                break
+            current_mask ^= (1 << current_city)  # Remove current city from mask
+            current_city = next_city
+        
+        path.append(start_index)
+        path.reverse()
+        return path
