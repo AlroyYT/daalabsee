@@ -9,20 +9,25 @@ def index():
     """Render the main page"""
     return render_template('index.html')
 
+@app.route('/compare')
+def compare():
+    """Render the algorithm comparison page"""
+    return render_template('comp.html')
+
 @app.route('/solve_tsp', methods=['POST'])
 def solve_tsp():
     """
     Solve TSP problem for warehouse robot path optimization
-    
+
     Expected JSON input:
     {
         "points": [[x1, y1], [x2, y2], ...],
-        "algorithm": "nearest_neighbor" | "greedy" | "genetic"
+        "algorithm": "nearest_neighbor" | "greedy" | "genetic" | "dynamic" | "aco"
     }
-    
+
     Returns:
     {
-        "path": [[x1, y1], [x2, y2], ...],  # Ordered path including return to start
+        "path": [[x1, y1], [x2, y2], ...],
         "total_distance": float,
         "execution_time": float,
         "algorithm_used": string
@@ -32,18 +37,25 @@ def solve_tsp():
         data = request.get_json()
         points = data.get('points', [])
         algorithm = data.get('algorithm', 'nearest_neighbor')
-        
+
         if len(points) < 2:
             return jsonify({
                 'error': 'At least 2 points are required'
             }), 400
-        
+
         # Initialize TSP solver
         solver = TSPSolver(points)
         
+        #new 
+        data = request.get_json()
+        print("🔧 Received TSP request:", data)  # Debug log
+
+        points = data.get('points', [])
+        algorithm = data.get('algorithm', 'nearest_neighbor')
+        
         # Start timing
         start_time = time.time()
-        
+
         # Solve based on selected algorithm
         if algorithm == 'nearest_neighbor':
             path, total_distance = solver.nearest_neighbor()
@@ -59,17 +71,17 @@ def solve_tsp():
             return jsonify({
                 'error': f'Unknown algorithm: {algorithm}'
             }), 400
-        
+
         # Calculate execution time
         execution_time = time.time() - start_time
-        
+
         return jsonify({
             'path': path,
             'total_distance': round(total_distance, 3),
             'execution_time': round(execution_time, 6),
             'algorithm_used': algorithm
         })
-        
+
     except Exception as e:
         return jsonify({
             'error': f'Server error: {str(e)}'

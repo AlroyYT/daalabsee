@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 Algorithm Comparison - WarehouseBot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='comparison.css') }}">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-icon">🤖</span>
+                <span class="nav-title">WarehouseBot</span>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">🏠 Main Page</a>
+                <span class="nav-status">Algorithm Comparison</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔬 Algorithm Performance Comparison</h1>
+            <p>Compare different TSP algorithms on the same dataset</p>
+            <p>Run all algorithms on your current point set and analyze their performance metrics</p>
+        </header>
+
+        <!-- Control Panel -->
+        <div class="control-panel glass-card">
+            <div class="controls-row">
+                <div class="control-group">
+                    <button id="run-comparison-btn" class="btn btn-primary glow-btn">
+                        <span class="btn-icon">🚀</span>
+                        Run All Algorithms
+                    </button>
+                    <button id="clear-results-btn" class="btn btn-secondary">
+                        <span class="btn-icon">🗑️</span>
+                        Clear Results
+                    </button>
+                    <button id="export-results-btn" class="btn btn-info">
+                        <span class="btn-icon">📊</span>
+                        Export Results
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <span class="current-points">Current Points: <span id="points-count">0</span></span>
+                    <span class="last-updated">Last Updated: <span id="last-updated">Never</span></span>
+                </div>
+            </div>
+
+            <div class="controls-row">
+                <div class="control-group">
+                    <label>Test Data:</label>
+                    <button id="load-sample-btn" class="btn btn-small">
+                        <span class="btn-icon">📍</span>
+                        Load Sample Points
+                    </button>
+                    <button id="generate-random-btn" class="btn btn-small">
+                        <span class="btn-icon">🎲</span>
+                        Generate Random Points
+                    </button>
+                    <input type="number" id="random-count" class="glass-input small-input" placeholder="Count" value="8" min="3" max="20">
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Points Display -->
+        <div class="current-points-panel glass-card">
+            <h3>📍 Current Test Points</h3>
+            <div id="current-points-display" class="points-grid">
+                <p class="no-points">No points loaded. Load sample data or return to main page to add points.</p>
+            </div>
+        </div>
+
+        <!-- Comparison Results Table -->
+        <div class="comparison-results glass-card">
+            <h3>📊 Algorithm Comparison Results</h3>
+            <div class="table-container">
+                <table id="comparison-table" class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Algorithm</th>
+                            <th>Total Distance</th>
+                            <th>Execution Time (s)</th>
+                            <th>Efficiency Score</th>
+                            <th>Performance Rating</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparison-tbody">
+                        <tr>
+                            <td colspan="6" class="no-data">Run comparison to see results</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Performance Charts -->
+        <div class="charts-panel glass-card">
+            <h3>📈 Performance Visualization</h3>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h4>Distance Comparison</h4>
+                    <canvas id="distance-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4>Execution Time Comparison</h4>
+                    <canvas id="time-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm Details -->
+        <div class="algorithm-details glass-card">
+            <h3>🧠 Algorithm Information</h3>
+            <div class="algorithm-cards">
+                <div class="algorithm-card">
+                    <h4>Nearest Neighbor</h4>
+                    <p><strong>Type:</strong> Greedy Heuristic</p>
+                    <p><strong>Time Complexity:</strong> O(n²)</p>
+                    <p><strong>Best for:</strong> Quick approximations</p>
+                </div>
+                <div class="algorithm-card">
+                    <h4>Greedy Algorithm</h4>
+                    <p><strong>Type:</strong> Edge-based Greedy</p>
+                    <p><strong>Time Complexity:</strong> O(n² log n)</p>
+                    <p><strong>Best for:</strong> Balanced performance</p>
+                </div>
+                <div class="algorithm-card">
+                    <h4>Genetic Algorithm</h4>
+                    <p><strong>Type:</strong> Metaheuristic</p>
+                    <p><strong>Time Complexity:</strong> O(g × p × n)</p>
+                    <p><strong>Best for:</strong> High-quality solutions</p>
+                </div>
+                <div class="algorithm-card">
+                    <h4>Dynamic Programming</h4>
+                    <p><strong>Type:</strong> Exact Algorithm</p>
+                    <p><strong>Time Complexity:</strong> O(n² × 2ⁿ)</p>
+                    <p><strong>Best for:</strong> Optimal solutions (≤15 points)</p>
+                </div>
+                <div class="algorithm-card">
+                    <h4>Ant Colony Optimization</h4>
+                    <p><strong>Type:</strong> Swarm Intelligence</p>
+                    <p><strong>Time Complexity:</strong> O(i × a × n²)</p>
+                    <p><strong>Best for:</strong> Complex optimization</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p>Running algorithm comparison...</p>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <span id="progress-text">0/5 algorithms completed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <p>🔬 Advanced algorithm analysis and performance comparison system</p>
+            </div>
+            <div class="footer-links">
+                <span class="footer-brand">Built by Meta/Google Engineers</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="{{ url_for('static', filename='comparison.js') }}"></script>
+</body>
+</html>
