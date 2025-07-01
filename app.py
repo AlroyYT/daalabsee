@@ -9,6 +9,10 @@ def index():
     """Render the main page"""
     return render_template('index.html')
 
+@app.route('/multi-agent')
+def multiSimulation():
+    return render_template('multi.html')
+
 @app.route('/compare')
 def compare():
     """Render the algorithm comparison page"""

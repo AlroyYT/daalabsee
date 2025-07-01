@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Management System</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-gray: #ecf0f1;
+            --medium-gray: #bdc3c7;
+            --dark-gray: #7f8c8d;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --header-height: 60px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+            background-color: #f5f7fa;
+            line-height: 1.5;
+        }
+        
+        header {
+            height: var(--header-height);
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 10;
+        }
+        
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            margin-right: 10px;
+            color: var(--secondary-color);
+        }
+        
+        main {
+            padding: 20px;
+            background-color: #f5f7fa;
+            overflow-y: auto;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .card-actions {
+            display: flex;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .btn i {
+            margin-right: 6px;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--medium-gray);
+            color: var(--primary-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--light-gray);
+        }
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .btn-group {
+            display: flex;
+        }
+        
+        .btn-group .btn {
+            border-radius: 0;
+        }
+        
+        .btn-group .btn:first-child {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .btn-group .btn:last-child {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .btn-group .btn:not(:last-child) {
+            border-right: none;
+        }
+        
+        .warehouse-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 75%; /* 4:3 aspect ratio */
+            background-color: white;
+            border: 1px solid var(--light-gray);
+            overflow: hidden;
+        }
+        
+        .warehouse-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+        }
+        
+        .cell {
+            position: relative;
+            border: 1px solid var(--light-gray);
+            box-sizing: border-box;
+        }
+        
+        .cell.walkable {
+            background-color: white;
+        }
+        
+        .cell.node {
+            background-color: var(--accent-color);
+            cursor: pointer;
+        }
+        
+        .cell.node.selected {
+            box-shadow: inset 0 0 0 2px var(--secondary-color);
+        }
+        
+        .robot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid var(--primary-color);
+            z-index: 10;
+            transition: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            transform: translate(-50%, -50%);
+        }
+        
+        .priority-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 9px;
+            font-weight: bold;
+            color: white;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 3px;
+            padding: 0 3px;
+        }
+        
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-card {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+        
+        .status-card-title {
+            font-size: 12px;
+            color: var(--dark-gray);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .status-card-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .status-card-highlight {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
+        
+        .status-card-highlight.up {
+            color: var(--success-color);
+        }
+        
+        .status-card-highlight.down {
+            color: var(--danger-color);
+        }
+        
+        .status-card-highlight i {
+            margin-right: 5px;
+        }
+        
+        .task-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .task-list th {
+            text-align: left;
+            padding: 10px 15px;
+            background-color: var(--light-gray);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--dark-gray);
+        }
+        
+        .task-list td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .task-list tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .task-priority {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .priority-high {
+            background-color: var(--danger-color);
+        }
+        
+        .priority-medium {
+            background-color: var(--warning-color);
+        }
+        
+        .priority-low {
+            background-color: var(--success-color);
+        }
+        
+        .task-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+        
+        .task-status.assigned {
+            background-color: #e3f2fd;
+            color: var(--secondary-color);
+        }
+        
+        .task-status.completed {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+        
+        .badge-primary {
+            background-color: #e3f2fd;
+            color: var(--secondary-color);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--dark-gray);
+        }
+        
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 100;
+            pointer-events: none;
+            transform: translate(-50%, -100%);
+            white-space: nowrap;
+        }
+        
+        .tooltip:after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0,0,0,0.8) transparent transparent transparent;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-robot logo-icon"></i>
+            <span>Warehouse Management System</span>
+        </div>
+    </header>
+    
+    <main>
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Warehouse Operations</h1>
+            <div class="btn-group">
+                <button class="btn btn-outline">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button class="btn btn-primary" id="startSim">
+                    <i class="fas fa-play"></i> Start Simulation
+                </button>
+            </div>
+        </div>
+        
+        <div class="status-cards">
+            <div class="status-card">
+                <div class="status-card-title">Active Robots</div>
+                <div class="status-card-value" id="robotCount">0</div>
+                <div class="status-card-highlight up">
+                    <i class="fas fa-arrow-up"></i> 2 from yesterday
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <div class="status-card-title">Pending Tasks</div>
+                <div class="status-card-value" id="taskCount">0</div>
+                <div class="status-card-highlight down">
+                    <i class="fas fa-arrow-down"></i> 3 from yesterday
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <div class="status-card-title">Completed Today</div>
+                <div class="status-card-value" id="completedCount">0</div>
+                <div class="status-card-highlight up">
+                    <i class="fas fa-arrow-up"></i> 5 from yesterday
+                </div>
+            </div>
+            
+            <div class="status-card">
+                <div class="status-card-title">System Status</div>
+                <div class="status-card-value" id="systemStatus">Operational</div>
+                <div class="status-card-highlight">
+                    <i class="fas fa-circle" style="color: var(--success-color)"></i> All systems normal
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Warehouse Map</div>
+                <div class="card-actions">
+                    <button class="btn btn-outline btn-sm" id="addRobot">
+                        <i class="fas fa-plus"></i> Add Robot
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="addRandomTask">
+                        <i class="fas fa-random"></i> Random Task
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="resetSim">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                </div>
+            </div>
+            <div class="warehouse-container">
+                <div class="warehouse-grid" id="grid"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Recent Tasks</div>
+                <div class="card-actions">
+                    <button class="btn btn-outline btn-sm" id="showCreateTaskModal">
+                        <i class="fas fa-plus"></i> Create Task
+                    </button>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="task-list">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Destination</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskTableBody">
+                        <!-- Tasks will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Create Task Modal -->
+    <div class="modal" id="createTaskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Task</h3>
+                <button class="close" id="closeCreateTaskModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createTaskForm">
+                    <div class="form-group">
+                        <label for="taskDestination">Destination</label>
+                        <div style="display: flex;">
+                            <input type="text" class="form-control" id="taskDestinationX" placeholder="X" style="width: 50px; margin-right: 10px;">
+                            <input type="text" class="form-control" id="taskDestinationY" placeholder="Y" style="width: 50px;">
+                            <button type="button" class="btn btn-outline" style="margin-left: 10px;" id="selectOnMap">
+                                <i class="fas fa-map-marker-alt"></i> Select on Map
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskPriorityInput">Priority</label>
+                        <select class="form-control" id="taskPriorityInput">
+                            <option value="10">Critical (10)</option>
+                            <option value="9">High (9)</option>
+                            <option value="8">High (8)</option>
+                            <option value="7" selected>Medium (7)</option>
+                            <option value="6">Medium (6)</option>
+                            <option value="5">Medium (5)</option>
+                            <option value="4">Low (4)</option>
+                            <option value="3">Low (3)</option>
+                            <option value="2">Low (2)</option>
+                            <option value="1">Minimal (1)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDescription">Description (Optional)</label>
+                        <textarea class="form-control" id="taskDescription" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelCreateTask">Cancel</button>
+                <button class="btn btn-primary" id="confirmCreateTask">Create Task</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip" style="display: none;"></div>
+
+    <script>
+        // Simplified pathfinding using A* algorithm with priority consideration
+        function findPath(start, goal, grid, width, height, priority = 5) {
+            function heuristic(a, b) {
+                // Adjust heuristic based on priority (higher priority = more direct paths)
+                const baseDistance = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+                return baseDistance * (1.1 - (priority / 20)); // Priority affects path directness
+            }
+            
+            function getNeighbors(pos) {
+                const neighbors = [];
+                const dirs = [{x: 0, y: -1}, {x: 1, y: 0}, {x: 0, y: 1}, {x: -1, y: 0}];
+                
+                for (const dir of dirs) {
+                    const newX = pos.x + dir.x;
+                    const newY = pos.y + dir.y;
+                    
+                    if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+                        if (grid[newY][newX] >= 1) { // walkable or node
+                            neighbors.push({x: newX, y: newY});
+                        }
+                    }
+                }
+                return neighbors;
+            }
+            
+            const openSet = [{...start, f: 0, g: 0, h: heuristic(start, goal)}];
+            const closedSet = new Set();
+            const cameFrom = new Map();
+            
+            while (openSet.length > 0) {
+                // Find node with lowest f score
+                let current = openSet[0];
+                let currentIndex = 0;
+                
+                for (let i = 1; i < openSet.length; i++) {
+                    if (openSet[i].f < current.f) {
+                        current = openSet[i];
+                        currentIndex = i;
+                    }
+                }
+                
+                openSet.splice(currentIndex, 1);
+                const currentKey = `${current.x},${current.y}`;
+                closedSet.add(currentKey);
+                
+                // Check if we reached the goal
+                if (current.x === goal.x && current.y === goal.y) {
+                    const path = [];
+                    let node = current;
+                    while (cameFrom.has(`${node.x},${node.y}`)) {
+                        path.unshift({x: node.x, y: node.y});
+                        node = cameFrom.get(`${node.x},${node.y}`);
+                    }
+                    return path;
+                }
+                
+                // Check neighbors
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+                    
+                    if (closedSet.has(neighborKey)) continue;
+                    
+                    const tentativeG = current.g + 1;
+                    let existingNeighbor = openSet.find(n => n.x === neighbor.x && n.y === neighbor.y);
+                    
+                    if (!existingNeighbor) {
+                        const h = heuristic(neighbor, goal);
+                        const newNode = {
+                            x: neighbor.x,
+                            y: neighbor.y,
+                            g: tentativeG,
+                            h: h,
+                            f: tentativeG + h
+                        };
+                        openSet.push(newNode);
+                        cameFrom.set(neighborKey, current);
+                    } else if (tentativeG < existingNeighbor.g) {
+                        existingNeighbor.g = tentativeG;
+                        existingNeighbor.f = tentativeG + existingNeighbor.h;
+                        cameFrom.set(neighborKey, current);
+                    }
+                }
+            }
+            
+            return null; // No path found
+        }
+
+        // Main simulation
+        class WarehouseSimulation {
+            constructor() {
+                this.width = 20;
+                this.height = 15;
+                this.grid = this.createGrid();
+                this.nodes = this.findNodes();
+                this.selectedNode = null;
+                this.robots = [];
+                this.tasks = [];
+                this.completedTasks = 0;
+                this.simulationRunning = false;
+                this.lastFrameTime = 0;
+                this.fps = 0;
+                this.fpsCount = 0;
+                this.lastFpsUpdate = 0;
+                this.pathfindingActive = 0;
+                
+                this.initGrid();
+                this.setupEventListeners();
+                this.updateStats();
+                this.updateTaskTable();
+            }
+            
+            createGrid() {
+                const grid = Array(this.height).fill().map(() => Array(this.width).fill(0));
+                
+                // Create walkable paths
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        if (y % 3 === 2 || x % 3 === 2) {
+                            grid[y][x] = 1; // walkable
+                        }
+                    }
+                }
+                
+                // Add nodes (destinations) at intersections
+                for (let y = 2; y < this.height; y += 3) {
+                    for (let x = 2; x < this.width; x += 3) {
+                        grid[y][x] = 2; // node
+                    }
+                }
+                
+                return grid;
+            }
+            
+            findNodes() {
+                const nodes = [];
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        if (this.grid[y][x] === 2) {
+                            nodes.push({ x, y });
+                        }
+                    }
+                }
+                return nodes;
+            }
+            
+            initGrid() {
+                const gridElement = document.getElementById('grid');
+                gridElement.innerHTML = '';
+                
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        if (this.grid[y][x] === 1) {
+                            cell.classList.add('walkable');
+                        } else if (this.grid[y][x] === 2) {
+                            cell.classList.add('node');
+                            
+                            // Add click handler for node selection
+                            cell.addEventListener('click', () => {
+                                // Remove previous selection
+                                document.querySelectorAll('.node.selected').forEach(el => {
+                                    el.classList.remove('selected');
+                                });
+                                
+                                // Set new selection
+                                cell.classList.add('selected');
+                                this.selectedNode = { x, y };
+                                
+                                // Update the create task modal
+                                if (document.getElementById('createTaskModal').classList.contains('active')) {
+                                    document.getElementById('taskDestinationX').value = x;
+                                    document.getElementById('taskDestinationY').value = y;
+                                }
+                            });
+                            
+                            // Add hover effect for tooltip
+                            cell.addEventListener('mouseenter', (e) => {
+                                const tooltip = document.getElementById('tooltip');
+                                tooltip.textContent = `Node (${x}, ${y})`;
+                                tooltip.style.left = `${e.clientX}px`;
+                                tooltip.style.top = `${e.clientY}px`;
+                                tooltip.style.display = 'block';
+                            });
+                            
+                            cell.addEventListener('mouseleave', () => {
+                                document.getElementById('tooltip').style.display = 'none';
+                            });
+                        }
+                        
+                        gridElement.appendChild(cell);
+                    }
+                }
+            }
+            
+            addRobot() {
+                // Find docking positions (top row walkable areas)
+                const dockingPositions = [];
+                for (let x = 0; x < this.width; x++) {
+                    if (this.grid[0][x] >= 1) {
+                        dockingPositions.push({x, y: 0});
+                    }
+                }
+                
+                if (dockingPositions.length === 0) {
+                    // Fallback to any walkable position
+                    for (let y = 0; y < this.height; y++) {
+                        for (let x = 0; x < this.width; x++) {
+                            if (this.grid[y][x] >= 1) {
+                                dockingPositions.push({x, y});
+                                break;
+                            }
+                        }
+                        if (dockingPositions.length > 0) break;
+                    }
+                }
+                
+                const startPos = dockingPositions[Math.floor(Math.random() * dockingPositions.length)];
+                
+                const robot = {
+                    id: `R-${this.robots.length + 1}`,
+                    position: { ...startPos },
+                    targetPosition: { ...startPos },
+                    speed: 2.0,
+                    path: [],
+                    pathIndex: 0,
+                    task: null,
+                    status: 'idle',
+                    color: `hsl(${Math.random() * 360}, 70%, 60%)`
+                };
+                
+                this.robots.push(robot);
+                this.renderRobot(robot);
+                this.updateStats();
+                return robot;
+            }
+            
+            removeRobot() {
+                if (this.robots.length === 0) return;
+                
+                const robot = this.robots.pop();
+                if (robot.task) {
+                    robot.task.status = 'pending';
+                    robot.task.assignedRobot = null;
+                }
+                
+                const robotElement = document.querySelector(`.robot[data-id="${robot.id}"]`);
+                if (robotElement) {
+                    robotElement.remove();
+                }
+                
+                this.updateStats();
+                this.updateTaskTable();
+            }
+            
+            addTask(destination, priority = 5, description = '') {
+                this.tasks.push({
+                    id: `T-${this.tasks.length + 1}`,
+                    destination: { ...destination },
+                    priority: Math.max(1, Math.min(10, priority)),
+                    description,
+                    status: 'pending',
+                    assignedRobot: null,
+                    createdAt: new Date()
+                });
+                
+                this.updateTaskVisuals();
+                this.updateTaskTable();
+            }
+            
+            addRandomTask() {
+                if (this.nodes.length === 0) return;
+                
+                const destination = this.nodes[Math.floor(Math.random() * this.nodes.length)];
+                const priority = 1 + Math.floor(Math.random() * 10); // Random priority 1-10
+                const descriptions = [
+                    "Inventory restock",
+                    "Order fulfillment",
+                    "Quality check",
+                    "Item retrieval",
+                    "Pallet movement",
+                    "Loading dock prep",
+                    "Cycle count",
+                    "Cross-docking",
+                    "Returns processing",
+                    "Safety inspection"
+                ];
+                const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+                
+                this.addTask(destination, priority, description);
+            }
+            
+            clearTasks() {
+                this.tasks = this.tasks.filter(task => task.status === 'assigned');
+                this.updateTaskVisuals();
+                this.updateTaskTable();
+            }
+            
+            updateTaskVisuals() {
+                // Clear all priority indicators
+                document.querySelectorAll('.priority-indicator').forEach(el => el.remove());
+                
+                // Add indicators for pending tasks
+                this.tasks.filter(task => task.status === 'pending').forEach(task => {
+                    const cell = document.querySelector(`.cell[data-x="${task.destination.x}"][data-y="${task.destination.y}"]`);
+                    if (cell) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'priority-indicator';
+                        indicator.textContent = task.priority;
+                        
+                        // Color based on priority
+                        if (task.priority >= 8) {
+                            indicator.style.backgroundColor = '#e74c3c';
+                        } else if (task.priority >= 5) {
+                            indicator.style.backgroundColor = '#f39c12';
+                        } else {
+                            indicator.style.backgroundColor = '#2ecc71';
+                        }
+                        
+                        cell.appendChild(indicator);
+                    }
+                });
+            }
+            
+            updateTaskTable() {
+                const tableBody = document.getElementById('taskTableBody');
+                tableBody.innerHTML = '';
+                
+                // Sort tasks by creation date (newest first)
+                const sortedTasks = [...this.tasks].sort((a, b) => b.createdAt - a.createdAt);
+                
+                sortedTasks.slice(0, 10).forEach(task => {
+                    const row = document.createElement('tr');
+                    
+                    // ID
+                    const idCell = document.createElement('td');
+                    idCell.textContent = task.id;
+                    row.appendChild(idCell);
+                    
+                    // Destination
+                    const destCell = document.createElement('td');
+                    destCell.textContent = `(${task.destination.x}, ${task.destination.y})`;
+                    row.appendChild(destCell);
+                    
+                    // Priority
+                    const priorityCell = document.createElement('td');
+                    const priorityBadge = document.createElement('span');
+                    priorityBadge.textContent = task.priority;
+                    priorityBadge.className = 'task-priority';
+                    
+                    if (task.priority >= 8) {
+                        priorityBadge.classList.add('priority-high');
+                    } else if (task.priority >= 5) {
+                        priorityBadge.classList.add('priority-medium');
+                    } else {
+                        priorityBadge.classList.add('priority-low');
+                    }
+                    
+                    priorityCell.appendChild(priorityBadge);
+                    row.appendChild(priorityCell);
+                    
+                    // Status
+                    const statusCell = document.createElement('td');
+                    const statusBadge = document.createElement('span');
+                    statusBadge.textContent = task.status;
+                    statusBadge.className = `task-status ${task.status}`;
+                    statusCell.appendChild(statusBadge);
+                    row.appendChild(statusCell);
+                    
+                    // Assigned To
+                    const assignedCell = document.createElement('td');
+                    if (task.assignedRobot) {
+                        const badge = document.createElement('span');
+                        badge.textContent = task.assignedRobot;
+                        badge.className = 'badge badge-primary';
+                        assignedCell.appendChild(badge);
+                    } else {
+                        assignedCell.textContent = '-';
+                    }
+                    row.appendChild(assignedCell);
+                    
+                    // Actions
+                    const actionsCell = document.createElement('td');
+                    if (task.status === 'pending') {
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.className = 'btn btn-outline btn-sm';
+                        cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+                        cancelBtn.title = 'Cancel Task';
+                        cancelBtn.addEventListener('click', () => {
+                            this.tasks = this.tasks.filter(t => t.id !== task.id);
+                            this.updateTaskVisuals();
+                            this.updateTaskTable();
+                        });
+                        actionsCell.appendChild(cancelBtn);
+                    } else {
+                        actionsCell.textContent = '-';
+                    }
+                    row.appendChild(actionsCell);
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            startSimulation() {
+                if (this.simulationRunning) return;
+                
+                this.simulationRunning = true;
+                document.getElementById('startSim').innerHTML = '<i class="fas fa-pause"></i> Pause Simulation';
+                document.getElementById('systemStatus').textContent = 'Running';
+                
+                this.lastFrameTime = performance.now();
+                this.update();
+            }
+            
+            stopSimulation() {
+                this.simulationRunning = false;
+                document.getElementById('startSim').innerHTML = '<i class="fas fa-play"></i> Start Simulation';
+                document.getElementById('systemStatus').textContent = 'Paused';
+            }
+            
+            resetSimulation() {
+                this.stopSimulation();
+                
+                // Clear robots
+                document.querySelectorAll('.robot').forEach(el => el.remove());
+                this.robots = [];
+                
+                // Reset tasks
+                this.tasks = [];
+                this.completedTasks = 0;
+                this.updateTaskVisuals();
+                this.updateTaskTable();
+                
+                // Clear selection
+                document.querySelectorAll('.node.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                this.selectedNode = null;
+                
+                this.updateStats();
+            }
+            
+            update() {
+                if (!this.simulationRunning) return;
+                
+                const currentTime = performance.now();
+                
+                // Calculate FPS
+                this.fpsCount++;
+                if (currentTime - this.lastFpsUpdate >= 1000) {
+                    this.fps = Math.round(this.fpsCount * 1000 / (currentTime - this.lastFpsUpdate));
+                    this.fpsCount = 0;
+                    this.lastFpsUpdate = currentTime;
+                }
+                
+                const deltaTime = Math.min(50, currentTime - this.lastFrameTime) / 1000;
+                this.lastFrameTime = currentTime;
+                
+                this.assignTasks();
+                this.updateRobots(deltaTime);
+                this.updateStats();
+                
+                requestAnimationFrame(() => this.update());
+            }
+            
+            assignTasks() {
+                const pendingTasks = this.tasks
+                    .filter(task => task.status === 'pending')
+                    .sort((a, b) => b.priority - a.priority); // Sort by priority (highest first)
+                
+                const idleRobots = this.robots.filter(robot => robot.status === 'idle');
+                
+                // Assign highest priority tasks first
+                for (const task of pendingTasks) {
+                    if (idleRobots.length === 0) break;
+                    
+                    // Find closest idle robot (considering priority in distance calculation)
+                    let closestRobot = null;
+                    let minDistance = Infinity;
+                    
+                    for (const robot of idleRobots) {
+                        // Higher priority tasks get distance bonus to prefer closer robots
+                        const distance = (Math.abs(robot.position.x - task.destination.x) + 
+                                        Math.abs(robot.position.y - task.destination.y)) * 
+                                        (1.5 - (task.priority / 20)); // Priority affects distance calculation
+                        
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestRobot = robot;
+                        }
+                    }
+                    
+                    if (closestRobot) {
+                        this.assignTaskToRobot(closestRobot, task);
+                        idleRobots.splice(idleRobots.indexOf(closestRobot), 1);
+                    }
+                }
+            }
+            
+            assignTaskToRobot(robot, task) {
+                this.pathfindingActive++;
+                
+                // Use setTimeout to avoid blocking the UI thread
+                setTimeout(() => {
+                    const path = findPath(robot.position, task.destination, this.grid, this.width, this.height, task.priority);
+                    
+                    if (path && path.length > 0) {
+                        robot.path = path;
+                        robot.pathIndex = 0;
+                        robot.task = task;
+                        robot.status = 'moving';
+                        robot.targetPosition = { ...path[0] };
+                        
+                        task.status = 'assigned';
+                        task.assignedRobot = robot.id;
+                        
+                        // Update task visuals (remove priority indicator)
+                        this.updateTaskVisuals();
+                        this.updateTaskTable();
+                    }
+                    
+                    this.pathfindingActive--;
+                }, 0);
+            }
+            
+            updateRobots(deltaTime) {
+                for (const robot of this.robots) {
+                    if (robot.status === 'moving') {
+                        this.moveRobot(robot, deltaTime);
+                    }
+                }
+            }
+            
+            moveRobot(robot, deltaTime) {
+                if (robot.path.length === 0 || robot.pathIndex >= robot.path.length) {
+                    if (robot.task) {
+                        // Task completed
+                        robot.task.status = 'completed';
+                        this.completedTasks++;
+                        robot.task = null;
+                        
+                        // Return to docking area
+                        const dockingPositions = [];
+                        for (let x = 0; x < this.width; x++) {
+                            if (this.grid[0][x] >= 1) {
+                                dockingPositions.push({x, y: 0});
+                            }
+                        }
+                        
+                        if (dockingPositions.length > 0) {
+                            const dockingPos = dockingPositions[Math.floor(Math.random() * dockingPositions.length)];
+                            this.assignTaskToRobot(robot, {
+                                id: `RTN-${Date.now()}`,
+                                destination: dockingPos,
+                                priority: 1,
+                                status: 'pending',
+                                assignedRobot: null,
+                                createdAt: new Date()
+                            });
+                        }
+                    } else {
+                        robot.status = 'idle';
+                    }
+                    return;
+                }
+                
+                const target = robot.path[robot.pathIndex];
+                const dx = target.x - robot.position.x;
+                const dy = target.y - robot.position.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 0.1) {
+                    // Reached current waypoint
+                    robot.position = { ...target };
+                    robot.pathIndex++;
+                    
+                    if (robot.pathIndex < robot.path.length) {
+                        robot.targetPosition = { ...robot.path[robot.pathIndex] };
+                    }
+                } else {
+                    // Move toward target (speed adjusted by priority if it's a task)
+                    const speedMultiplier = robot.task ? (1 + robot.task.priority / 10) : 1;
+                    const moveDistance = robot.speed * speedMultiplier * deltaTime;
+                    robot.position.x += (dx / distance) * moveDistance;
+                    robot.position.y += (dy / distance) * moveDistance;
+                }
+                
+                this.updateRobotVisual(robot);
+            }
+            
+            renderRobot(robot) {
+                const robotElement = document.createElement('div');
+                robotElement.className = 'robot';
+                robotElement.dataset.id = robot.id;
+                robotElement.style.backgroundColor = robot.color;
+                
+                this.updateRobotVisual(robot, robotElement);
+                document.getElementById('grid').appendChild(robotElement);
+                
+                // Add hover effect for tooltip
+                robotElement.addEventListener('mouseenter', (e) => {
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.textContent = `${robot.id} (${robot.status})`;
+                    tooltip.style.left = `${e.clientX}px`;
+                    tooltip.style.top = `${e.clientY}px`;
+                    tooltip.style.display = 'block';
+                });
+                
+                robotElement.addEventListener('mouseleave', () => {
+                    document.getElementById('tooltip').style.display = 'none';
+                });
+            }
+            
+            updateRobotVisual(robot, element = null) {
+                const robotElement = element || document.querySelector(`.robot[data-id="${robot.id}"]`);
+                if (!robotElement) return;
+                
+                const gridElement = document.getElementById('grid');
+                const gridRect = gridElement.getBoundingClientRect();
+                const cellWidth = gridRect.width / this.width;
+                const cellHeight = gridRect.height / this.height;
+                
+                const pixelX = (robot.position.x + 0.5) * cellWidth;
+                const pixelY = (robot.position.y + 0.5) * cellHeight;
+                
+                robotElement.style.left = `${pixelX}px`;
+                robotElement.style.top = `${pixelY}px`;
+            }
+            
+            updateStats() {
+                document.getElementById('robotCount').textContent = this.robots.length;
+                
+                const pendingTasks = this.tasks.filter(t => t.status === 'pending');
+                const assignedTasks = this.tasks.filter(t => t.status === 'assigned');
+                
+                document.getElementById('taskCount').textContent = pendingTasks.length + assignedTasks.length;
+                document.getElementById('completedCount').textContent = this.completedTasks;
+            }
+            
+            setupEventListeners() {
+                // Simulation controls
+                document.getElementById('startSim').addEventListener('click', () => {
+                    if (this.simulationRunning) {
+                        this.stopSimulation();
+                    } else {
+                        this.startSimulation();
+                    }
+                });
+                
+                document.getElementById('addRobot').addEventListener('click', () => {
+                    this.addRobot();
+                });
+                
+                document.getElementById('addRandomTask').addEventListener('click', () => {
+                    this.addRandomTask();
+                });
+                
+                document.getElementById('resetSim').addEventListener('click', () => {
+                    this.resetSimulation();
+                });
+                
+                // Task creation modal
+                document.getElementById('showCreateTaskModal').addEventListener('click', () => {
+                    document.getElementById('createTaskModal').classList.add('active');
+                    
+                    // If a node is selected, pre-fill the coordinates
+                    if (this.selectedNode) {
+                        document.getElementById('taskDestinationX').value = this.selectedNode.x;
+                        document.getElementById('taskDestinationY').value = this.selectedNode.y;
+                    }
+                });
+                
+                document.getElementById('closeCreateTaskModal').addEventListener('click', () => {
+                    document.getElementById('createTaskModal').classList.remove('active');
+                });
+                
+                document.getElementById('cancelCreateTask').addEventListener('click', () => {
+                    document.getElementById('createTaskModal').classList.remove('active');
+                });
+                
+                document.getElementById('selectOnMap').addEventListener('click', () => {
+                    alert("Please select a destination node on the map first");
+                });
+                
+                document.getElementById('confirmCreateTask').addEventListener('click', () => {
+                    const x = parseInt(document.getElementById('taskDestinationX').value);
+                    const y = parseInt(document.getElementById('taskDestinationY').value);
+                    const priority = parseInt(document.getElementById('taskPriorityInput').value);
+                    const description = document.getElementById('taskDescription').value;
+                    
+                    if (isNaN(x) || isNaN(y) || x < 0 || x >= this.width || y < 0 || y >= this.height) {
+                        alert("Please enter valid coordinates (X: 0-" + (this.width-1) + ", Y: 0-" + (this.height-1) + ")");
+                        return;
+                    }
+                    
+                    if (this.grid[y][x] < 2) {
+                        alert("Selected coordinates must be a node (red circle)");
+                        return;
+                    }
+                    
+                    this.addTask({x, y}, priority, description);
+                    document.getElementById('createTaskModal').classList.remove('active');
+                    document.getElementById('createTaskForm').reset();
+                });
+                
+                // Close modal when clicking outside
+                document.getElementById('createTaskModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('createTaskModal')) {
+                        document.getElementById('createTaskModal').classList.remove('active');
+                    }
+                });
+            }
+        }
+
+        // Initialize simulation when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const simulation = new WarehouseSimulation();
+            
+            // Add some initial robots and tasks for demo purposes
+            for (let i = 0; i < 3; i++) {
+                simulation.addRobot();
+            }
+            
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    simulation.addRandomTask();
+                }, i * 500);
+            }
+        });
+    </script>
+</body>
+</html>
