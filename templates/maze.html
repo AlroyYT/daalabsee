@@ -212,6 +212,7 @@
                     <option value="astar">A* Algorithm</option>
                     <option value="dijkstra">Dijkstra</option>
                     <option value="greedy">Greedy Best-First</option>
+                    <option value="nearest">Nearest Neighbor</option>
                 </select>
             </div>
             
@@ -364,6 +365,8 @@
                         return this.dijkstraPath(targetX, targetY);
                     case 'greedy':
                         return this.greedyPath(targetX, targetY);
+                    case 'nearest':
+                        return this.nearestNeighborPath(targetX, targetY);
                     default:
                         return this.aStarPath(targetX, targetY);
                 }
@@ -521,6 +524,33 @@
 
                 return [];
             }
+
+            nearestNeighborPath(targetX, targetY) {
+                const visited = new Set();
+                const path = [];
+                let current = { x: this.x, y: this.y };
+                visited.add(`${current.x},${current.y}`);
+
+                while (!(current.x === targetX && current.y === targetY)) {
+                    const neighbors = this.getValidNeighbors(current.x, current.y)
+                        .filter(n => !visited.has(`${n.x},${n.y}`));
+                    
+                    if (neighbors.length === 0) break;
+
+                    neighbors.sort((a, b) => 
+                        this.heuristic(a.x, a.y, targetX, targetY) -
+                        this.heuristic(b.x, b.y, targetX, targetY)
+                    );
+
+                    const next = neighbors[0];
+                    path.push(next);
+                    visited.add(`${next.x},${next.y}`);
+                    current = next;
+                }
+
+                return path;
+            }
+
 
             getValidNeighbors(x, y) {
                 const neighbors = [];
