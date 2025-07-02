@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Robot Warehouse Optimization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        select, input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .game-area {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .maze-container {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        #maze {
+            border: 3px solid #34495e;
+            border-radius: 8px;
+            margin: 0 auto;
+            display: block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-panel {
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .robot-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .robot-0 { border-left-color: #e74c3c; background: rgba(231, 76, 60, 0.1); }
+        .robot-1 { border-left-color: #3498db; background: rgba(52, 152, 219, 0.1); }
+        .robot-2 { border-left-color: #2ecc71; background: rgba(46, 204, 113, 0.1); }
+        .robot-3 { border-left-color: #f39c12; background: rgba(243, 156, 18, 0.1); }
+
+        .stats {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .stats h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+            }
+            
+            .info-panel {
+                width: 100%;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Multi-Robot Warehouse Optimization</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Edit Mode:</label>
+                <select id="editMode">
+                    <option value="wall">Add Walls</option>
+                    <option value="erase">Erase</option>
+                    <option value="start">Set Start Points</option>
+                    <option value="delivery">Set Delivery Points</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Algorithm:</label>
+                <select id="algorithm">
+                    <option value="astar">A* Algorithm</option>
+                    <option value="dijkstra">Dijkstra</option>
+                    <option value="greedy">Greedy Best-First</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Number of Robots:</label>
+                <input type="number" id="robotCount" min="1" max="4" value="2">
+            </div>
+            
+            <div class="control-group">
+                <label>Animation Speed:</label>
+                <input type="range" id="speed" min="50" max="500" value="200">
+            </div>
+            
+            <button onclick="generateMaze()">Generate Random Maze</button>
+            <button onclick="clearMaze()">Clear Maze</button>
+            <button onclick="startSimulation()">Start Simulation</button>
+            <button onclick="stopSimulation()">Stop</button>
+        </div>
+
+        <div class="game-area">
+            <div class="maze-container">
+                <canvas id="maze" width="600" height="600"></canvas>
+            </div>
+            
+            <div class="info-panel">
+                <h3>Robot Status</h3>
+                <div id="robotStatus"></div>
+                
+                <div class="stats">
+                    <h3>Performance Metrics</h3>
+                    <div class="stat-item">
+                        <span>Total Distance:</span>
+                        <span id="totalDistance">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Completed Deliveries:</span>
+                        <span id="completedDeliveries">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Active Robots:</span>
+                        <span id="activeRobots">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Collisions Avoided:</span>
+                        <span id="collisionsAvoided">0</span>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <h3>Legend</h3>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #34495e;"></div>
+                        <span>Walls</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>Robot 1</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>Robot 2</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2ecc71;"></div>
+                        <span>Robot 3</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f39c12;"></div>
+                        <span>Robot 4</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #9b59b6;"></div>
+                        <span>Start Points</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #1abc9c;"></div>
+                        <span>Delivery Points</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const GRID_SIZE = 30;
+        const CELL_SIZE = 20;
+        let maze = [];
+        let robots = [];
+        let deliveryPoints = [];
+        let startPoints = [];
+        let isRunning = false;
+        let animationId = null;
+        let stats = {
+            totalDistance: 0,
+            completedDeliveries: 0,
+            activeRobots: 0,
+            collisionsAvoided: 0
+        };
+
+        // Get canvas and context
+        const canvas = document.getElementById('maze');
+        const ctx = canvas.getContext('2d');
+
+        // Robot colors
+        const ROBOT_COLORS = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+
+        // Initialize maze
+        function initMaze() {
+            maze = [];
+            for (let i = 0; i < GRID_SIZE; i++) {
+                maze[i] = [];
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    maze[i][j] = {
+                        wall: false,
+                        robot: -1,
+                        start: -1,
+                        delivery: false,
+                        visited: false,
+                        path: false
+                    };
+                }
+            }
+        }
+
+        // Robot class
+        class Robot {
+            constructor(id, x, y, color) {
+                this.id = id;
+                this.x = x;
+                this.y = y;
+                this.startX = x;
+                this.startY = y;
+                this.color = color;
+                this.path = [];
+                this.currentTarget = null;
+                this.deliveredItems = 0;
+                this.totalDistance = 0;
+                this.status = 'idle';
+                this.pathIndex = 0;
+                this.waitTime = 0; // Add wait time for collision avoidance
+            }
+
+            findPath(targetX, targetY) {
+                const algorithm = document.getElementById('algorithm').value;
+                switch (algorithm) {
+                    case 'astar':
+                        return this.aStarPath(targetX, targetY);
+                    case 'dijkstra':
+                        return this.dijkstraPath(targetX, targetY);
+                    case 'greedy':
+                        return this.greedyPath(targetX, targetY);
+                    default:
+                        return this.aStarPath(targetX, targetY);
+                }
+            }
+
+            aStarPath(targetX, targetY) {
+                const openSet = [];
+                const closedSet = new Set();
+                const cameFrom = {};
+                const gScore = {};
+                const fScore = {};
+
+                const start = `${this.x},${this.y}`;
+                const goal = `${targetX},${targetY}`;
+
+                // Initialize scores
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    for (let j = 0; j < GRID_SIZE; j++) {
+                        const key = `${i},${j}`;
+                        gScore[key] = Infinity;
+                        fScore[key] = Infinity;
+                    }
+                }
+
+                gScore[start] = 0;
+                fScore[start] = this.heuristic(this.x, this.y, targetX, targetY);
+                openSet.push({ x: this.x, y: this.y, f: fScore[start] });
+
+                while (openSet.length > 0) {
+                    // Get node with lowest fScore
+                    openSet.sort((a, b) => a.f - b.f);
+                    const current = openSet.shift();
+                    const currentKey = `${current.x},${current.y}`;
+
+                    if (currentKey === goal) {
+                        return this.reconstructPath(cameFrom, currentKey);
+                    }
+
+                    closedSet.add(currentKey);
+
+                    // Check neighbors
+                    const neighbors = this.getValidNeighbors(current.x, current.y);
+                    for (const neighbor of neighbors) {
+                        const neighborKey = `${neighbor.x},${neighbor.y}`;
+                        
+                        if (closedSet.has(neighborKey)) continue;
+
+                        const tentativeGScore = gScore[currentKey] + 1;
+
+                        if (!openSet.find(n => n.x === neighbor.x && n.y === neighbor.y)) {
+                            openSet.push({ 
+                                x: neighbor.x, 
+                                y: neighbor.y, 
+                                f: tentativeGScore + this.heuristic(neighbor.x, neighbor.y, targetX, targetY)
+                            });
+                        } else if (tentativeGScore >= gScore[neighborKey]) {
+                            continue;
+                        }
+
+                        cameFrom[neighborKey] = currentKey;
+                        gScore[neighborKey] = tentativeGScore;
+                        fScore[neighborKey] = tentativeGScore + this.heuristic(neighbor.x, neighbor.y, targetX, targetY);
+                        
+                        // Update fScore in openSet
+                        const openNode = openSet.find(n => n.x === neighbor.x && n.y === neighbor.y);
+                        if (openNode) {
+                            openNode.f = fScore[neighborKey];
+                        }
+                    }
+                }
+
+                return [];
+            }
+
+            dijkstraPath(targetX, targetY) {
+                const distances = {};
+                const previous = {};
+                const unvisited = [];
+
+                // Initialize
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    for (let j = 0; j < GRID_SIZE; j++) {
+                        const key = `${i},${j}`;
+                        distances[key] = Infinity;
+                        previous[key] = null;
+                        if (!maze[i][j].wall) {
+                            unvisited.push({ x: i, y: j });
+                        }
+                    }
+                }
+
+                const startKey = `${this.x},${this.y}`;
+                distances[startKey] = 0;
+
+                while (unvisited.length > 0) {
+                    // Find unvisited node with minimum distance
+                    unvisited.sort((a, b) => distances[`${a.x},${a.y}`] - distances[`${b.x},${b.y}`]);
+                    const current = unvisited.shift();
+                    const currentKey = `${current.x},${current.y}`;
+
+                    if (current.x === targetX && current.y === targetY) {
+                        return this.reconstructPath(previous, currentKey);
+                    }
+
+                    if (distances[currentKey] === Infinity) break;
+
+                    const neighbors = this.getValidNeighbors(current.x, current.y);
+                    for (const neighbor of neighbors) {
+                        const neighborKey = `${neighbor.x},${neighbor.y}`;
+                        const alt = distances[currentKey] + 1;
+
+                        if (alt < distances[neighborKey]) {
+                            distances[neighborKey] = alt;
+                            previous[neighborKey] = currentKey;
+                        }
+                    }
+                }
+
+                return [];
+            }
+
+            greedyPath(targetX, targetY) {
+                const visited = new Set();
+                const queue = [{ x: this.x, y: this.y, path: [] }];
+
+                while (queue.length > 0) {
+                    // Sort by heuristic (greedy approach)
+                    queue.sort((a, b) => 
+                        this.heuristic(a.x, a.y, targetX, targetY) - 
+                        this.heuristic(b.x, b.y, targetX, targetY)
+                    );
+                    
+                    const current = queue.shift();
+                    const key = `${current.x},${current.y}`;
+
+                    if (visited.has(key)) continue;
+                    visited.add(key);
+
+                    if (current.x === targetX && current.y === targetY) {
+                        return current.path;
+                    }
+
+                    const neighbors = this.getValidNeighbors(current.x, current.y);
+                    for (const neighbor of neighbors) {
+                        const neighborKey = `${neighbor.x},${neighbor.y}`;
+                        if (!visited.has(neighborKey)) {
+                            queue.push({
+                                x: neighbor.x,
+                                y: neighbor.y,
+                                path: [...current.path, { x: neighbor.x, y: neighbor.y }]
+                            });
+                        }
+                    }
+                }
+
+                return [];
+            }
+
+            getValidNeighbors(x, y) {
+                const neighbors = [];
+                const directions = [
+                    { dx: 0, dy: -1 }, // up
+                    { dx: 1, dy: 0 },  // right
+                    { dx: 0, dy: 1 },  // down
+                    { dx: -1, dy: 0 }  // left
+                ];
+
+                for (const dir of directions) {
+                    const newX = x + dir.dx;
+                    const newY = y + dir.dy;
+
+                    if (newX >= 0 && newX < GRID_SIZE && 
+                        newY >= 0 && newY < GRID_SIZE && 
+                        !maze[newX][newY].wall) {
+                        neighbors.push({ x: newX, y: newY });
+                    }
+                }
+
+                return neighbors;
+            }
+
+            willCollide(x, y) {
+                // Simplified collision detection
+                for (const robot of robots) {
+                    if (robot.id !== this.id && robot.x === x && robot.y === y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            heuristic(x1, y1, x2, y2) {
+                return Math.abs(x1 - x2) + Math.abs(y1 - y2); // Manhattan distance
+            }
+
+            reconstructPath(cameFrom, current) {
+                const path = [];
+                while (cameFrom[current]) {
+                    const coords = current.split(',').map(Number);
+                    path.unshift({ x: coords[0], y: coords[1] });
+                    current = cameFrom[current];
+                }
+                return path;
+            }
+
+            move() {
+                // Handle wait time for collision avoidance
+                if (this.waitTime > 0) {
+                    this.waitTime--;
+                    return;
+                }
+
+                if (this.path.length === 0) {
+                    if (this.status !== 'delivered') {
+                        this.findNextDelivery();
+                    }
+                    return;
+                }
+
+                if (this.pathIndex < this.path.length) {
+                    const nextPos = this.path[this.pathIndex];
+                    
+                    // Simple collision avoidance - wait if position is occupied
+                    if (this.willCollide(nextPos.x, nextPos.y)) {
+                        this.waitTime = 2; // Wait 2 frames
+                        stats.collisionsAvoided++;
+                        return;
+                    }
+                    
+                    // Clear current position
+                    maze[this.x][this.y].robot = -1;
+                    
+                    // Move to next position
+                    this.x = nextPos.x;
+                    this.y = nextPos.y;
+                    this.totalDistance++;
+                    
+                    // Mark new position
+                    maze[this.x][this.y].robot = this.id;
+                    
+                    this.pathIndex++;
+                    this.status = 'moving';
+                } else {
+                    // Reached destination
+                    if (maze[this.x][this.y].delivery) {
+                        this.deliveredItems++;
+                        maze[this.x][this.y].delivery = false;
+                        stats.completedDeliveries++;
+                        this.status = 'delivered';
+                        
+                        // Remove from delivery points array
+                        deliveryPoints = deliveryPoints.filter(p => !(p.x === this.x && p.y === this.y));
+                    }
+                    this.path = [];
+                    this.pathIndex = 0;
+                    this.currentTarget = null;
+                }
+            }
+
+            findNextDelivery() {
+                // Find nearest unassigned delivery point
+                let nearestDelivery = null;
+                let minDistance = Infinity;
+
+                for (const delivery of deliveryPoints) {
+                    if (maze[delivery.x][delivery.y].delivery) {
+                        const distance = this.heuristic(this.x, this.y, delivery.x, delivery.y);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            nearestDelivery = delivery;
+                        }
+                    }
+                }
+
+                if (nearestDelivery) {
+                    this.currentTarget = nearestDelivery;
+                    this.path = this.findPath(nearestDelivery.x, nearestDelivery.y);
+                    this.pathIndex = 0;
+                    this.status = 'pathfinding';
+                } else {
+                    this.status = 'idle';
+                }
+            }
+        }
+
+        // Initialize everything
+        function init() {
+            initMaze();
+            drawMaze();
+            updateUI();
+        }
+
+        // Draw maze
+        function drawMaze() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    const x = i * CELL_SIZE;
+                    const y = j * CELL_SIZE;
+
+                    // Draw cell background
+                    ctx.fillStyle = '#ecf0f1';
+                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+
+                    // Draw walls
+                    if (maze[i][j].wall) {
+                        ctx.fillStyle = '#34495e';
+                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    }
+
+                    // Draw start points
+                    if (maze[i][j].start >= 0) {
+                        ctx.fillStyle = '#9b59b6';
+                        ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText((maze[i][j].start + 1).toString(), x + CELL_SIZE/2, y + CELL_SIZE/2 + 4);
+                    }
+
+                    // Draw delivery points
+                    if (maze[i][j].delivery) {
+                        ctx.fillStyle = '#1abc9c';
+                        ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 14px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('📦', x + CELL_SIZE/2, y + CELL_SIZE/2 + 5);
+                    }
+
+                    // Draw path visualization
+                    if (maze[i][j].path) {
+                        ctx.fillStyle = 'rgba(52, 152, 219, 0.3)';
+                        ctx.fillRect(x + 4, y + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+                    }
+
+                    // Draw robots
+                    if (maze[i][j].robot >= 0) {
+                        const robotId = maze[i][j].robot;
+                        ctx.fillStyle = ROBOT_COLORS[robotId];
+                        ctx.beginPath();
+                        ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, CELL_SIZE/2 - 3, 0, 2 * Math.PI);
+                        ctx.fill();
+                        
+                        // Draw robot number
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText((robotId + 1).toString(), x + CELL_SIZE/2, y + CELL_SIZE/2 + 4);
+                    }
+
+                    // Draw grid lines
+                    ctx.strokeStyle = '#bdc3c7';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                }
+            }
+        }
+
+        // Canvas click handler
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+
+            if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+                const mode = document.getElementById('editMode').value;
+                handleCellClick(x, y, mode);
+            }
+        });
+
+        function handleCellClick(x, y, mode) {
+            switch (mode) {
+                case 'wall':
+                    maze[x][y].wall = !maze[x][y].wall;
+                    maze[x][y].start = -1;
+                    maze[x][y].delivery = false;
+                    break;
+                case 'erase':
+                    maze[x][y].wall = false;
+                    maze[x][y].start = -1;
+                    maze[x][y].delivery = false;
+                    maze[x][y].robot = -1;
+                    // Remove from arrays
+                    startPoints = startPoints.filter(p => !(p.x === x && p.y === y));
+                    deliveryPoints = deliveryPoints.filter(p => !(p.x === x && p.y === y));
+                    break;
+                case 'start':
+                    if (!maze[x][y].wall) {
+                        // Find next available start point ID
+                        let startId = 0;
+                        while (startId < 4 && startPoints.some(p => p.id === startId)) {
+                            startId++;
+                        }
+                        if (startId < 4) {
+                            maze[x][y].start = startId;
+                            maze[x][y].delivery = false;
+                            startPoints.push({ id: startId, x, y });
+                        }
+                    }
+                    break;
+                case 'delivery':
+                    if (!maze[x][y].wall && maze[x][y].start === -1) {
+                        if (!maze[x][y].delivery) {
+                            maze[x][y].delivery = true;
+                            deliveryPoints.push({ x, y });
+                        } else {
+                            maze[x][y].delivery = false;
+                            deliveryPoints = deliveryPoints.filter(p => !(p.x === x && p.y === y));
+                        }
+                    }
+                    break;
+            }
+            drawMaze();
+        }
+
+        function generateMaze() {
+            initMaze();
+            startPoints = [];
+            deliveryPoints = [];
+            
+            // Generate random walls
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    if (Math.random() < 0.25) { // 25% chance of wall
+                        maze[i][j].wall = true;
+                    }
+                }
+            }
+            
+            // Add some guaranteed paths
+            for (let i = 0; i < GRID_SIZE; i += 4) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    maze[i][j].wall = false;
+                }
+            }
+            
+            // Generate start points
+            const robotCount = parseInt(document.getElementById('robotCount').value);
+            for (let i = 0; i < robotCount; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * GRID_SIZE);
+                    y = Math.floor(Math.random() * GRID_SIZE);
+                } while (maze[x][y].wall || maze[x][y].start >= 0);
+                
+                maze[x][y].start = i;
+                startPoints.push({ id: i, x, y });
+            }
+            
+            // Generate delivery points
+            for (let i = 0; i < 8; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * GRID_SIZE);
+                    y = Math.floor(Math.random() * GRID_SIZE);
+                } while (maze[x][y].wall || maze[x][y].start >= 0 || maze[x][y].delivery);
+                
+                maze[x][y].delivery = true;
+                deliveryPoints.push({ x, y });
+            }
+            
+            drawMaze();
+        }
+
+        function clearMaze() {
+            initMaze();
+            robots = [];
+            startPoints = [];
+            deliveryPoints = [];
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            resetStats();
+            drawMaze();
+            updateUI();
+        }
+
+        function startSimulation() {
+            if (isRunning) return;
+            
+            if (startPoints.length === 0) {
+                alert('Please add start points first!');
+                return;
+            }
+            
+            if (deliveryPoints.length === 0) {
+                alert('Please add delivery points first!');
+                return;
+            }
+            
+            // Initialize robots
+            robots = [];
+            const robotCount = Math.min(parseInt(document.getElementById('robotCount').value), startPoints.length);
+            
+            for (let i = 0; i < robotCount; i++) {
+                if (startPoints[i]) {
+                    const robot = new Robot(i, startPoints[i].x, startPoints[i].y, ROBOT_COLORS[i]);
+                    robots.push(robot);
+                    maze[startPoints[i].x][startPoints[i].y].robot = i;
+                }
+            }
+            
+            isRunning = true;
+            resetStats();
+            animate();
+        }
+
+        function stopSimulation() {
+            isRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            
+            // Clear robot positions from maze
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    maze[i][j].robot = -1;
+                    maze[i][j].path = false;
+                }
+            }
+            
+            robots = [];
+            drawMaze();
+            updateUI();
+        }
+
+        function animate() {
+            if (!isRunning) return;
+            
+            // Clear path visualization
+            for (let i = 0; i < GRID_SIZE; i++) {
+                for (let j = 0; j < GRID_SIZE; j++) {
+                    maze[i][j].path = false;
+                }
+            }
+            
+            // Update robots
+            stats.activeRobots = 0;
+            stats.totalDistance = 0;
+            
+            for (const robot of robots) {
+                if (robot.status !== 'idle' || deliveryPoints.length > 0) {
+                    stats.activeRobots++;
+                }
+                stats.totalDistance += robot.totalDistance;
+                
+                // Visualize current path
+                for (let k = robot.pathIndex; k < robot.path.length; k++) {
+                    const pathPoint = robot.path[k];
+                    maze[pathPoint.x][pathPoint.y].path = true;
+                }
+                
+                robot.move();
+            }
+            
+            drawMaze();
+            updateUI();
+            
+            // Check if simulation is complete
+            if (deliveryPoints.length === 0 && robots.every(r => r.status === 'idle' || r.status === 'delivered')) {
+                setTimeout(() => {
+                    alert(`Simulation Complete!\nTotal Distance: ${stats.totalDistance}\nDeliveries: ${stats.completedDeliveries}\nCollisions Avoided: ${stats.collisionsAvoided}`);
+                    stopSimulation();
+                }, 1000);
+                return;
+            }
+            
+            const speed = parseInt(document.getElementById('speed').value);
+            setTimeout(() => {
+                animationId = requestAnimationFrame(animate);
+            }, 600 - speed);
+        }
+
+        function updateUI() {
+            // Update robot status
+            const robotStatusDiv = document.getElementById('robotStatus');
+            robotStatusDiv.innerHTML = '';
+            
+            for (const robot of robots) {
+                const robotDiv = document.createElement('div');
+                robotDiv.className = `robot-info robot-${robot.id}`;
+                robotDiv.innerHTML = `
+                    <h4 style="margin: 0 0 8px 0; color: ${robot.color};">Robot ${robot.id + 1}</h4>
+                    <div style="font-size: 0.9em;">
+                        <div>Status: <strong>${robot.status}</strong></div>
+                        <div>Position: (${robot.x}, ${robot.y})</div>
+                        <div>Delivered: ${robot.deliveredItems}</div>
+                        <div>Distance: ${robot.totalDistance}</div>
+                        ${robot.currentTarget ? `<div>Target: (${robot.currentTarget.x}, ${robot.currentTarget.y})</div>` : ''}
+                    </div>
+                `;
+                robotStatusDiv.appendChild(robotDiv);
+            }
+            
+            // Update stats
+            document.getElementById('totalDistance').textContent = stats.totalDistance;
+            document.getElementById('completedDeliveries').textContent = stats.completedDeliveries;
+            document.getElementById('activeRobots').textContent = stats.activeRobots;
+            document.getElementById('collisionsAvoided').textContent = stats.collisionsAvoided;
+        }
+
+        function resetStats() {
+            stats = {
+                totalDistance: 0,
+                completedDeliveries: 0,
+                activeRobots: 0,
+                collisionsAvoided: 0
+            };
+            updateUI();
+        }
+
+        // Event listeners
+        document.getElementById('robotCount').addEventListener('change', (e) => {
+            if (isRunning) {
+                alert('Stop the simulation before changing robot count');
+                return;
+            }
+            const count = parseInt(e.target.value);
+            if (count > startPoints.length) {
+                alert(`Not enough start points. Please add ${count - startPoints.length} more start points.`);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case ' ': // Spacebar
+                    e.preventDefault();
+                    if (isRunning) {
+                        stopSimulation();
+                    } else {
+                        startSimulation();
+                    }
+                    break;
+                case 'c':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        clearMaze();
+                    }
+                    break;
+                case 'g':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        generateMaze();
+                    }
+                    break;
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            init();
+            
+            // Add some default setup
+            generateMaze();
+            
+            // Show keyboard shortcuts
+            console.log('🤖 Warehouse Robot Simulator Loaded!');
+            console.log('Keyboard Shortcuts:');
+            console.log('  Spacebar: Start/Stop simulation');
+            console.log('  Ctrl+C: Clear maze');
+            console.log('  Ctrl+G: Generate random maze');
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            drawMaze();
+        });
+
+        // Add touch support for mobile
+        let isMouseDown = false;
+        
+        canvas.addEventListener('mousedown', () => { isMouseDown = true; });
+        canvas.addEventListener('mouseup', () => { isMouseDown = false; });
+        canvas.addEventListener('mouseleave', () => { isMouseDown = false; });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
+            const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+            
+            if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+                const mode = document.getElementById('editMode').value;
+                if (mode === 'wall' || mode === 'erase') {
+                    handleCellClick(x, y, mode);
+                }
+            }
+        });
+
+        // Export functionality for integration with Flask backend
+        window.warehouseSimulator = {
+            getMazeState: () => ({
+                maze: maze,
+                robots: robots.map(r => ({
+                    id: r.id,
+                    x: r.x,
+                    y: r.y,
+                    deliveredItems: r.deliveredItems,
+                    totalDistance: r.totalDistance,
+                    status: r.status
+                })),
+                deliveryPoints: deliveryPoints,
+                startPoints: startPoints,
+                stats: stats
+            }),
+            
+            setMazeState: (state) => {
+                maze = state.maze;
+                deliveryPoints = state.deliveryPoints || [];
+                startPoints = state.startPoints || [];
+                if (state.stats) {
+                    stats = state.stats;
+                }
+                drawMaze();
+                updateUI();
+            },
+            
+            exportResults: () => ({
+                algorithm: document.getElementById('algorithm').value,
+                robotCount: robots.length,
+                totalDistance: stats.totalDistance,
+                completedDeliveries: stats.completedDeliveries,
+                collisionsAvoided: stats.collisionsAvoided,
+                efficiency: stats.completedDeliveries / (stats.totalDistance || 1),
+                timestamp: new Date().toISOString()
+            })
+        };
+    </script>
+</body>
+</html>
